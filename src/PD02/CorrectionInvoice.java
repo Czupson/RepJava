@@ -1,4 +1,11 @@
 package PD02;
 
-public record CorrectionInvoice() {
-}
+import java.time.LocalDate;
+
+public record CorrectionInvoice(
+        String correctionNumber,
+        String originalNumber,
+        Money amountAdjustment,
+        LocalDate issuedOn,
+        String reason
+) {}
