@@ -1,4 +1,8 @@
 package PD04.error;
 
-public class RentalError {
+public sealed interface RentalError
+    permits MovieNotFound, CustomerNotFound, CustomerBlocked,
+            TooYoungForCategory, MovieAlreadyRented, RentalLimitExceeded {
+
+        String message();
 }
