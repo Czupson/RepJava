@@ -6,6 +6,8 @@ import PD04.domain.Customer;
 import PD04.domain.CustomerStatus;
 import PD04.domain.Movie;
 import PD04.error.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
