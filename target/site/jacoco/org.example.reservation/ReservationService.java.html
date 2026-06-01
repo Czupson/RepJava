@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pl"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReservationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">testing-homework</a> &gt; <a href="index.source.html" class="el_package">org.example.reservation</a> &gt; <span class="el_source">ReservationService.java</span></div><h1>ReservationService.java</h1><pre class="source lang-java linenums">package org.example.reservation;
+
+public class ReservationService {
+
+    private final RoomRepository roomRepository;
+    private final ReservationRepository reservationRepository;
+    private final ReservationEmailService emailService;
+    private final ConfirmationCodeGenerator codeGenerator;
+    private final EventPublisher eventPublisher;
+
+    public ReservationService(RoomRepository roomRepository,
+                              ReservationRepository reservationRepository,
+                              ReservationEmailService emailService,
+                              ConfirmationCodeGenerator codeGenerator,
+<span class="fc" id="L15">                              EventPublisher eventPublisher) {</span>
+<span class="fc" id="L16">        this.roomRepository = roomRepository;</span>
+<span class="fc" id="L17">        this.reservationRepository = reservationRepository;</span>
+<span class="fc" id="L18">        this.emailService = emailService;</span>
+<span class="fc" id="L19">        this.codeGenerator = codeGenerator;</span>
+<span class="fc" id="L20">        this.eventPublisher = eventPublisher;</span>
+<span class="fc" id="L21">    }</span>
+
+    public Reservation createReservation(String roomId, String organizerEmail,
+                                         TimeSlot timeSlot, int attendees) {
+<span class="fc" id="L25">        Room room = roomRepository.findById(roomId)</span>
+<span class="fc" id="L26">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Sala nie istnieje: &quot; + roomId));</span>
+
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (attendees &gt; room.getCapacity()) {</span>
+<span class="fc" id="L29">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L30">                    String.format(&quot;Sala %s ma pojemność %d, żądano %d miejsc&quot;,</span>
+<span class="fc" id="L31">                            room.getName(), room.getCapacity(), attendees));</span>
+        }
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (reservationRepository.existsByRoomIdAndTimeSlot(roomId, timeSlot)) {</span>
+<span class="fc" id="L35">            throw new IllegalStateException(</span>
+<span class="fc" id="L36">                    &quot;Sala &quot; + room.getName() + &quot; jest już zarezerwowana w tym terminie&quot;);</span>
+        }
+
+<span class="fc" id="L39">        String confirmationCode = codeGenerator.generate();</span>
+
+<span class="fc" id="L41">        Reservation reservation = new Reservation();</span>
+<span class="fc" id="L42">        reservation.setRoomId(roomId);</span>
+<span class="fc" id="L43">        reservation.setOrganizerEmail(organizerEmail);</span>
+<span class="fc" id="L44">        reservation.setTimeSlot(timeSlot);</span>
+<span class="fc" id="L45">        reservation.setAttendees(attendees);</span>
+<span class="fc" id="L46">        reservation.setConfirmationCode(confirmationCode);</span>
+<span class="fc" id="L47">        reservation.setStatus(ReservationStatus.CONFIRMED);</span>
+
+<span class="fc" id="L49">        Reservation saved = reservationRepository.save(reservation);</span>
+
+<span class="fc" id="L51">        String subject = &quot;Potwierdzenie rezerwacji sali &quot; + room.getName();</span>
+<span class="fc" id="L52">        String body = String.format(</span>
+                &quot;Rezerwacja potwierdzona!\nSala: %s\nData: %s\nGodziny: %s - %s\nKod: %s&quot;,
+<span class="fc" id="L54">                room.getName(),</span>
+<span class="fc" id="L55">                timeSlot.getDate(),</span>
+<span class="fc" id="L56">                timeSlot.getStartTime(),</span>
+<span class="fc" id="L57">                timeSlot.getEndTime(),</span>
+                confirmationCode
+        );
+<span class="fc" id="L60">        emailService.sendConfirmation(new ConfirmationEmail(organizerEmail, subject, body));</span>
+
+<span class="fc" id="L62">        eventPublisher.publish(&quot;RESERVATION_CREATED&quot;,</span>
+<span class="fc" id="L63">                &quot;Rezerwacja &quot; + confirmationCode + &quot; dla sali &quot; + room.getName());</span>
+
+<span class="fc" id="L65">        return saved;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
